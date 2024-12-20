@@ -1,15 +1,46 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="styles.css">
-    <title>Document</title>
+    <title>Capturar Foto</title>
 </head>
 <body>
-    <video autoplay></video>
-    <canvas></canvas>
-    <button>tirar foto</button>
-    <script src="script.js"></script>
+    <video autoplay playsinline></video>
+    <button>Tirar Foto</button>
+    <canvas style="display: none;"></canvas>
+    <div id="output"></div>
+
+    <script>
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                const video = document.querySelector('video');
+                video.srcObject = stream;
+                video.play();
+
+                document.querySelector('button').addEventListener('click', () => {
+                    // Configurar o canvas com o tamanho do vídeo
+                    const canvas = document.querySelector('canvas');
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+
+                    // Desenhar a imagem do vídeo no canvas
+                    const context = canvas.getContext('2d');
+                    context.drawImage(video, 0, 0);
+
+                    // Criar um elemento <img> para exibir a foto
+                    const img = document.createElement('img');
+                    img.src = canvas.toDataURL('image/png');
+
+                    // Renderizar a foto no <div id="output">
+                    const output = document.getElementById('output');
+                    output.innerHTML = ''; // Limpar renderizações anteriores
+                    output.appendChild(img);
+                });
+            })
+            .catch(error => {
+                console.error('Erro ao acessar a câmera:', error);
+            });
+    </script>
 </body>
 </html>
