@@ -6,41 +6,54 @@
     <title>Capturar Foto</title>
 </head>
 <body>
-    <video autoplay playsinline></video>
     <button>Tirar Foto</button>
     <canvas style="display: none;"></canvas>
     <div id="output"></div>
 
     <script>
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(stream => {
-                const video = document.querySelector('video');
-                video.srcObject = stream;
-                video.play();
+        let stream;
 
-                document.querySelector('button').addEventListener('click', () => {
-                    // Configurar o canvas com o tamanho do vídeo
-                    const canvas = document.querySelector('canvas');
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
+        // Acessar a câmera e capturar a imagem quando o botão for clicado
+        document.querySelector('button').addEventListener('click', async () => {
+            if (!stream) {
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                } catch (error) {
+                    console.error('Erro ao acessar a câmera:', error);
+                    return;
+                }
+            }
 
-                    // Desenhar a imagem do vídeo no canvas
-                    const context = canvas.getContext('2d');
-                    context.drawImage(video, 0, 0);
+            // Criar um elemento de vídeo temporário para capturar o frame
+            const video = document.createElement('video');
+            video.srcObject = stream;
 
-                    // Criar um elemento <img> para exibir a foto
-                    const img = document.createElement('img');
-                    img.src = canvas.toDataURL('image/png');
-
-                    // Renderizar a foto no <div id="output">
-                    const output = document.getElementById('output');
-                    output.innerHTML = ''; // Limpar renderizações anteriores
-                    output.appendChild(img);
-                });
-            })
-            .catch(error => {
-                console.error('Erro ao acessar a câmera:', error);
+            // Esperar o vídeo carregar os metadados (tamanho, etc.)
+            await new Promise(resolve => {
+                video.onloadedmetadata = () => {
+                    video.play();
+                    resolve();
+                };
             });
+
+            // Capturar o frame no canvas
+            const canvas = document.querySelector('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0);
+
+            // Parar o stream para liberar a câmera
+            stream.getTracks().forEach(track => track.stop());
+            stream = null;
+
+            // Renderizar a imagem capturada
+            const img = document.createElement('img');
+            img.src = canvas.toDataURL('image/png');
+            const output = document.getElementById('output');
+            output.innerHTML = ''; // Limpar renderizações anteriores
+            output.appendChild(img);
+        });
     </script>
 </body>
 </html>
